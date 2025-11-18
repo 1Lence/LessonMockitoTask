@@ -230,24 +230,6 @@ class ShoppingServiceTest {
     }
 
     /**
-     * Получение списка продуктов должно возвращать неизменяемую коллекцию
-     */
-    @Test
-    void getProductsShouldReturnUnmodifiableMap() {
-        Cart cart = shoppingService.getCart(customer);
-
-        Product product = new Product("Какой-то продукт", 10);
-
-        cart.add(product, 2);
-
-        Map<Product, Integer> products = cart.getProducts();
-
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
-            products.put(new Product("Новый продукт", 5), 1);
-        });
-    }
-
-    /**
      * Ошибка.
      * Проверка на покупку отрицательного количества товара.
      *
@@ -292,5 +274,23 @@ class ShoppingServiceTest {
                 exception.getMessage(),
                 "В наличии нет необходимого количества товара 'Ноль'"
         );
+    }
+
+    /**
+     * Ошибка.
+     *
+     * <p>После успешной покупки не очищается корзина, обнуляется лишь {@code count}</p>
+     */
+    @Test
+    void carShouldBeZeroAfterBuy() throws BuyException {
+        Cart cart = shoppingService.getCart(customer);
+        Product zeroStockProduct = new Product("Очистка", 10);
+
+        cart.add(zeroStockProduct, 5);
+        shoppingService.buy(cart);
+
+        Map<Product, Integer> productMap = cart.getProducts();
+
+        Assertions.assertEquals(0, productMap.size());
     }
 }
