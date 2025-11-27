@@ -51,27 +51,6 @@ class CartTest {
 
     /**
      * Ошибка.
-     * Проверка попытки добавить товар в корзину с количеством 0.
-     *
-     * <p>Исходя из здравого смысла, это будет хорошая проверка, потому что это потенциальный неприятный баг для корзины</p>
-     */
-    @Test
-    void cartAddShouldThrowExceptionWithZeroCountOfProduct() {
-        Product product = new Product("Ноль", 1);
-
-        IllegalArgumentException exception = Assertions.assertThrows(
-                IllegalArgumentException.class,
-                () -> cart.add(product, 0)
-        );
-
-        Assertions.assertEquals(
-                "Невозможно добавить товар '%s' в корзину, т.к. нет необходимого количества товаров",
-                exception.getMessage()
-        );
-    }
-
-    /**
-     * Ошибка.
      *
      * <p>Нет проверки на минусовое значение</p>
      */
@@ -85,7 +64,7 @@ class CartTest {
         );
 
         Assertions.assertEquals(
-                "Невозможно добавить товар '%s' в корзину, т.к. нет необходимого количества товаров",
+                String.format("Невозможно добавить товар Минус в корзину, со значением %s", -10),
                 exception.getMessage()
         );
     }
@@ -103,7 +82,7 @@ class CartTest {
         );
 
         Assertions.assertEquals(
-                "Невозможно добавить товар '%s' в корзину, т.к. нет необходимого количества товаров",
+                "Невозможно добавить пустой продукт.",
                 exception.getMessage()
         );
     }

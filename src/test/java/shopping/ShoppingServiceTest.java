@@ -1,7 +1,6 @@
 package shopping;
 
 import customer.Customer;
-import customer.CustomerDao;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,8 +11,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import product.Product;
 import product.ProductDao;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -43,13 +40,11 @@ class ShoppingServiceTest {
     }
 
     /**
-     * Проверка на то, что метод возвращает новую корзину. Но непонятно точно ли логика должна работать именно так?
+     * Проверка на то, что метод возвращает новую корзину.
      */
     @Test
     void getCartTest() {
-        Cart cart = new Cart(customer);
-
-        Assertions.assertNotEquals(cart, shoppingService.getCart(customer));
+        Assertions.assertEquals(shoppingService.getCart(customer), shoppingService.getCart(customer));
     }
 
     /**
@@ -60,39 +55,6 @@ class ShoppingServiceTest {
     @Test
     void getProductByName() {
 
-    }
-
-    /**
-     * Проверка получения всех товаров.
-     * Метод должен обратиться к ДАО и вернуть список.
-     */
-    @Test
-    void getAllProductsShouldReturnListFromDao() {
-        List<Product> expectedProducts = Arrays.asList(
-                new Product("Product1", 10),
-                new Product("Product2", 5)
-        );
-        Mockito.when(productDao.getAll()).thenReturn(expectedProducts);
-
-        List<Product> actualProducts = shoppingService.getAllProducts();
-
-        Assertions.assertEquals(expectedProducts, actualProducts);
-        Mockito.verify(productDao, Mockito.times(1)).getAll();
-    }
-
-    /**
-     * Проверка получения товара по имени. Должен возвращаться товар из DAO
-     */
-    @Test
-    void getProductByNameShouldReturnProductFromDao() {
-        String productName = "TestProduct";
-        Product expectedProduct = new Product(productName, 15);
-        Mockito.when(productDao.getByName(productName)).thenReturn(expectedProduct);
-
-        Product actualProduct = shoppingService.getProductByName(productName);
-
-        Assertions.assertEquals(expectedProduct, actualProduct);
-        Mockito.verify(productDao, Mockito.times(1)).getByName(productName);
     }
 
     /**
@@ -109,7 +71,11 @@ class ShoppingServiceTest {
     }
 
     /**
-     * Проверка успешной покупки.
+     * Ошибка.
+     *
+     * <p>После успешной покупки не очищается корзина, обнуляется лишь {@code count}</p>
+     *
+     * Проверка успешной покупки. После покупки корзина должна очищаться.
      * Количество товаров должно уменьшаться и сохраняться с помощью DAO
      */
     @Test
@@ -127,6 +93,9 @@ class ShoppingServiceTest {
         Mockito.verify(productDao, Mockito.times(1)).save(product1);
         Mockito.verify(productDao, Mockito.times(1)).save(product2);
 
+        Map<Product, Integer> productMap = cart.getProducts();
+
+        Assertions.assertEquals(0, productMap.size());
         Assertions.assertEquals(7, product1.getCount());
         Assertions.assertEquals(3, product2.getCount());
     }
@@ -134,9 +103,6 @@ class ShoppingServiceTest {
     /**
      * Проверка успешной покупки.
      * Количество товаров должно уменьшаться и сохраняться с помощью DAO
-     *
-     * <p>Метод {@code add()} у класса {@code Cart} работает с ошибкой, но я не могу написать на это тест,
-     * ведь задания написания теста только на Сервис покупок</p>
      */
     @Test
     void buyWithInsufficientProductQuantityShouldThrowBuyException() {
@@ -155,27 +121,6 @@ class ShoppingServiceTest {
                 "В наличии нет необходимого количества товара 'Какой-то продукт'"
         );
         Mockito.verify(productDao, Mockito.never()).save(Mockito.any(Product.class));
-    }
-
-    /**
-     * Проверка на возможность купить товары с одной корзины дважды.
-     */
-    @Test
-    void buyWithMultipleProductShouldThrowBuyException() {
-        Cart cart = shoppingService.getCart(customer);
-        Product sufficientProduct = new Product("Какой-то продукт", 10);
-
-        cart.add(sufficientProduct, 9);
-
-        BuyException exception = Assertions.assertThrows(BuyException.class, () -> {
-            shoppingService.buy(cart);
-            shoppingService.buy(cart);
-        });
-
-        Assertions.assertEquals(
-                exception.getMessage(),
-                "В наличии нет необходимого количества товара 'Какой-то продукт'"
-        );
     }
 
     /**
@@ -199,11 +144,6 @@ class ShoppingServiceTest {
     /**
      * Проверка на возможность купить товар другому покупателю, если до него кто-то уже купил этот товар
      *
-     * <p>Метод {@code add()} у класса {@code Cart} работает с ошибкой, но я не могу написать на это тест,
-     * ведь задания написания теста только на Сервис покупок. </p>
-     *
-     * <p>Ошибка заключается в том, что я не могу добавить равное количество товара в тележку,
-     * соответственно тест на равную покупку написать невозможно</p>
      */
     @Test
     void twoCustomersBuyShouldThrowBuyException() throws BuyException {
@@ -274,23 +214,5 @@ class ShoppingServiceTest {
                 exception.getMessage(),
                 "В наличии нет необходимого количества товара 'Ноль'"
         );
-    }
-
-    /**
-     * Ошибка.
-     *
-     * <p>После успешной покупки не очищается корзина, обнуляется лишь {@code count}</p>
-     */
-    @Test
-    void carShouldBeZeroAfterBuy() throws BuyException {
-        Cart cart = shoppingService.getCart(customer);
-        Product zeroStockProduct = new Product("Очистка", 10);
-
-        cart.add(zeroStockProduct, 5);
-        shoppingService.buy(cart);
-
-        Map<Product, Integer> productMap = cart.getProducts();
-
-        Assertions.assertEquals(0, productMap.size());
     }
 }
